@@ -38,7 +38,6 @@ window.__ModuleLoader__.load({
     // ---------------------------------------------------------------------
     const zh = {
       'view.label': '分屏',
-      'brand': '分屏',
       'layout.label': '布局',
       'layout.1x1': '单屏',
       'layout.2x1': '左右并排',
@@ -47,7 +46,6 @@ window.__ModuleLoader__.load({
       'layout.3x1': '三列并排',
       'layout.3x2': '六宫格',
       'layout.3x3': '九宫格',
-      'hint': '窗格展示其它会话；当前会话使用下方输入框',
       'pane.pick': '拖入或选择会话',
       'pane.switch': '切换会话',
       'pane.openMain': '在主视图打开',
@@ -61,12 +59,12 @@ window.__ModuleLoader__.load({
       'picker.subagent': '子代理',
       'picker.expand': '展开子会话',
       'picker.collapse': '收起子会话',
+      'drop.subagentUnsupported': '子代理会话不支持附件',
       'action.close': '关闭',
     };
 
     const en = {
       'view.label': 'Split',
-      'brand': 'Split view',
       'layout.label': 'Layout',
       'layout.1x1': 'Single',
       'layout.2x1': 'Side by side',
@@ -75,7 +73,6 @@ window.__ModuleLoader__.load({
       'layout.3x1': 'Three columns',
       'layout.3x2': '3 × 2 grid',
       'layout.3x3': '3 × 3 grid',
-      'hint': 'Panes show other sessions; the current session uses the composer below',
       'pane.pick': 'Drop or choose a session',
       'pane.switch': 'Switch session',
       'pane.openMain': 'Open in the main view',
@@ -89,6 +86,7 @@ window.__ModuleLoader__.load({
       'picker.subagent': 'Subagent',
       'picker.expand': 'Expand child sessions',
       'picker.collapse': 'Collapse child sessions',
+      'drop.subagentUnsupported': 'Subagent sessions do not accept attachments',
       'action.close': 'Close',
     };
 
@@ -116,23 +114,18 @@ window.__ModuleLoader__.load({
     // ---------------------------------------------------------------------
     const CSS = `
 .dshsv-overlay { box-sizing: border-box; display: flex; flex-direction: column; background: var(--dsw-alias-bg-base); }
-.dshsv-root { box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0;
-  padding: 4px 12px 10px; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-base); }
-.dshsv-toolbar { display: flex; align-items: center; gap: 8px; flex: none; min-height: 28px; }
-.dshsv-brand { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; letter-spacing: .01em; }
-.dshsv-brand-icon { color: var(--dsw-alias-brand-primary); display: inline-flex; }
-.dshsv-layout { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dsw-alias-label-secondary); }
-.dshsv-select { height: 26px; box-sizing: border-box; padding: 0 22px 0 8px; font: inherit; font-size: 12px;
+.dshsv-root { position: relative; isolation: isolate; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0;
+  padding: 2px 12px 10px; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-base); }
+.dshsv-select { height: 24px; box-sizing: border-box; padding: 0 22px 0 8px; font: inherit; font-size: 12px;
   color: var(--dsw-alias-label-primary); background-color: var(--dsw-alias-bg-layer-1);
   border: 1px solid var(--dsw-alias-border-l1); border-radius: var(--dsw-radius-sm, 6px);
   appearance: none; -webkit-appearance: none; cursor: pointer;
   background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
   background-position: calc(100% - 13px) 11px, calc(100% - 9px) 11px; background-size: 4px 4px; background-repeat: no-repeat; }
+.dshsv-header-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dsw-alias-label-secondary); }
+.dshsv-header-chip .dshsv-select { height: 24px; padding: 0 20px 0 7px; background-position: calc(100% - 11px) 10px, calc(100% - 7px) 10px; }
 .dshsv-select:hover { border-color: var(--dsw-alias-border-l2); }
 .dshsv-select:focus-visible { outline: none; border-color: var(--dsw-alias-brand-primary); }
-.dshsv-toolbar-spacer { flex: 1; }
-.dshsv-hint { font-size: 11px; color: var(--dsw-alias-label-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 1000px) { .dshsv-hint { display: none; } }
 .dshsv-button { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; box-sizing: border-box;
   font: inherit; font-size: 12px; color: var(--dsw-alias-label-secondary); background: transparent; cursor: pointer;
   border: 1px solid var(--dsw-alias-border-l1); border-radius: var(--dsw-radius-sm, 6px); }
@@ -151,6 +144,16 @@ window.__ModuleLoader__.load({
   background: transparent; border: 0; border-radius: var(--dsw-radius-sm, 6px); cursor: pointer; }
 .dshsv-pane-title:hover { background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, .12)); }
 .dshsv-pane-title-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dshsv-toast { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 500;
+  display: inline-flex; align-items: center; gap: 8px; max-width: min(520px, calc(100% - 48px));
+  padding: 9px 16px; font-size: 13px; line-height: 18px; color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-bg-base, #fff); border: 1px solid var(--dsw-alias-state-warn-primary);
+  border-radius: 999px; box-shadow: var(--dsw-shadow-lv2, 0 4px 16px rgba(0, 0, 0, .18));
+  pointer-events: none; animation: dshsv-toast-in .18s ease-out; }
+.dshsv-toast.is-leaving { animation: dshsv-toast-out .2s ease-in forwards; }
+.dshsv-toast-icon { display: inline-flex; flex: none; color: var(--dsw-alias-state-warn-primary); }
+@keyframes dshsv-toast-in { from { opacity: 0; transform: translate(-50%, 6px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes dshsv-toast-out { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, 6px); } }
 .dshsv-pane-actions { display: inline-flex; align-items: center; gap: 2px; flex: none; }
 .dshsv-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; background: var(--dsw-alias-state-idle-primary); }
 .dshsv-dot.is-running { background: var(--dsw-alias-state-success-primary); }
@@ -169,16 +172,17 @@ window.__ModuleLoader__.load({
 .dshsv-backdrop { position: fixed; inset: 0; z-index: 950; display: flex; align-items: flex-start; justify-content: center;
   padding: clamp(44px, 10vh, 120px) 24px 24px; background: rgba(0, 0, 0, .35); }
 .dshsv-dialog { display: flex; flex-direction: column; width: min(560px, calc(100vw - 48px)); max-height: min(72vh, 640px);
-  overflow: hidden; background: var(--dsw-alias-bg-overlay, var(--dsw-alias-bg-layer-1));
+  overflow: hidden; background: var(--dsw-alias-bg-base, #fff);
   border: 1px solid var(--dsw-alias-border-l1); border-radius: var(--dsw-radius-lg, 12px);
   box-shadow: 0 18px 48px rgba(0, 0, 0, .28); }
 .dshsv-dialog-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 10px 8px 14px;
   font-size: 13px; font-weight: 600; }
 .dshsv-search { box-sizing: border-box; height: 30px; margin: 0 12px 8px; padding: 0 9px;
-  font: inherit; font-size: 12px; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-base);
+  font: inherit; font-size: 12px; color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-base, #fff);
   border: 1px solid var(--dsw-alias-border-l1); border-radius: var(--dsw-radius-sm, 6px); outline: none; }
 .dshsv-search:focus { border-color: var(--dsw-alias-brand-primary); }
-.dshsv-dialog-list { display: flex; flex-direction: column; gap: 2px; overflow: auto; padding: 2px 8px 10px; }
+.dshsv-dialog-list { display: flex; flex-direction: column; gap: 2px; overflow: auto; padding: 2px 8px 10px;
+  background: var(--dsw-alias-bg-base, #fff); }
 .dshsv-session-item { display: flex; align-items: center; gap: 2px; min-width: 0; }
 .dshsv-session-item > .dshsv-session-row { flex: 1; min-width: 0; }
 .dshsv-chevron-btn { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; flex: none;
@@ -214,17 +218,6 @@ window.__ModuleLoader__.load({
           style: props.style,
         },
         props.children,
-      );
-    }
-
-    function GridIcon(props) {
-      return h(
-        Svg,
-        props,
-        h('rect', { x: 2, y: 2.6, width: 5, height: 4.8, rx: 1 }),
-        h('rect', { x: 9, y: 2.6, width: 5, height: 4.8, rx: 1 }),
-        h('rect', { x: 2, y: 8.6, width: 5, height: 4.8, rx: 1 }),
-        h('rect', { x: 9, y: 8.6, width: 5, height: 4.8, rx: 1 }),
       );
     }
 
@@ -469,12 +462,8 @@ window.__ModuleLoader__.load({
     }
 
     // ---------------------------------------------------------------------
-    // Drop routing shared between the view and its pane occupants
+    // Active split-view geometry (which Session is open and where its view area is)
     // ---------------------------------------------------------------------
-    /** The pane a file drop is aimed at; panes read this when their attachments grow. */
-    const fileDropRoute = { sessionId: null, time: 0 };
-    const FILE_ROUTE_TTL_MS = 2000;
-
     /** The active split view: its Session and the viewport rect it occupies. */
     const splitMode = (() => {
       let state = { sessionId: null, rect: null };
@@ -515,11 +504,40 @@ window.__ModuleLoader__.load({
       };
     })();
 
-    function markFileDropTarget(sessionId) {
-      fileDropRoute.sessionId = typeof sessionId === 'string' ? sessionId : null;
-      fileDropRoute.time = Date.now();
+    // ---------------------------------------------------------------------
+    // Per-session composer inputs (published by the mounted composer arrangements)
+    // ---------------------------------------------------------------------
+    /**
+     * SessionId -> the InputActions of a mounted composer arrangement. Two
+     * arrangements can exist for the current Session (the resident panel composer
+     * and its pane composer), so entries are reference counted.
+     */
+    const composerInputs = new Map();
+    function registerComposerInput(sessionId, inputActions) {
+      if (typeof sessionId !== 'string' || sessionId.length === 0) return () => {};
+      const existing = composerInputs.get(sessionId);
+      if (existing !== undefined) {
+        existing.count += 1;
+        if (inputActions !== undefined) existing.inputActions = inputActions;
+        return () => {
+          const current = composerInputs.get(sessionId);
+          if (current === undefined) return;
+          current.count -= 1;
+          if (current.count <= 0) composerInputs.delete(sessionId);
+        };
+      }
+      composerInputs.set(sessionId, { count: 1, inputActions });
+      return () => {
+        const current = composerInputs.get(sessionId);
+        if (current === undefined) return;
+        current.count -= 1;
+        if (current.count <= 0) composerInputs.delete(sessionId);
+      };
     }
 
+    // ---------------------------------------------------------------------
+    // Drop routing shared between the view and its pane occupants
+    // ---------------------------------------------------------------------
     function readSessionIdFromDrop(dataTransfer) {
       if (dataTransfer === null || dataTransfer === undefined) return undefined;
       const types = Array.isArray(dataTransfer.types) ? dataTransfer.types : [];
@@ -609,6 +627,49 @@ window.__ModuleLoader__.load({
       return rows;
     }
 
+    /** IME composition state: the ownership watchdog must never interrupt a composition. */
+    const splitComposition = { active: false, until: 0 };
+
+    /** Latest draft text of the Session that hosts the split view (root-ownership watchdog). */
+    const splitDraftMirror = { draft: null };
+
+    /** Whether a Session is a subagent session (one-shot record or continuable child). */
+    function sessionIsSubagent(ctx, sessionId) {
+      try {
+        const binding = ctx.sessions.binding?.(sessionId);
+        const snapshot = binding?.session?.getSnapshot?.();
+        return snapshot?.subagent !== undefined && snapshot?.subagent !== null;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    /** True when the drag carries a directory: those keep the host path-reference path. */
+    function transferHasDirectory(transfer) {
+      try {
+        const items = transfer?.items;
+        if (items === undefined || items === null) return false;
+        for (const item of Array.from(items)) {
+          const entry = typeof item.webkitGetAsEntry === 'function' ? item.webkitGetAsEntry() : null;
+          if (entry !== null && entry !== undefined && entry.isDirectory === true) return true;
+        }
+      } catch (error) {
+        /* treat as plain files */
+      }
+      return false;
+    }
+
+    /** Resolve the session-scoped Conversation service (draft attachments + uploads). */
+    function scopedConversationOf(ctx, sessionId) {
+      try {
+        const scope = ctx.sessions.scope?.(sessionId);
+        const conversation = scope?.get?.('conversation');
+        return conversation !== undefined && conversation !== null ? conversation : undefined;
+      } catch (error) {
+        return undefined;
+      }
+    }
+
     /** Resolve the pane index under the pointer from a drag event, if any. */
     function paneIndexAt(event) {
       try {
@@ -641,41 +702,19 @@ window.__ModuleLoader__.load({
      */
     function createSplitViewEntry(ctx, store) {
       return function SplitViewPlaceholder(props) {
-        const { sessionId, useInput, inputActions } = props;
+        const { sessionId, inputActions, useInput } = props;
         const anchorRef = useRef(null);
-        const previousAttachments = useRef([]);
-
-        // A file drop reaches every mounted composer. The pane it was aimed at
-        // keeps the files; the current session's composer below the grid removes
-        // the ones it also received.
-        const attachmentIds = typeof useInput === 'function' ? useInput((value) => value.attachmentIds) : undefined;
+        const draftValue = typeof useInput === 'function' ? useInput((value) => value.draft) : undefined;
         useEffect(() => {
-          const currentIds = Array.isArray(attachmentIds) ? attachmentIds : [];
-          const previous = previousAttachments.current;
-          previousAttachments.current = currentIds;
-          const uniqueIds = currentIds.filter((id, index) => currentIds.indexOf(id) === index);
-          if (uniqueIds.length !== currentIds.length) {
-            try {
-              inputActions?.pruneAttachments?.(uniqueIds);
-            } catch (error) {
-              /* keep going */
-            }
-          }
-          const added = currentIds.filter((id) => !previous.includes(id));
-          if (added.length === 0) return;
-          if (fileDropRoute.time === 0 || Date.now() - fileDropRoute.time > FILE_ROUTE_TTL_MS) return;
-          if (fileDropRoute.sessionId === sessionId) return;
-          for (const id of added) {
-            try {
-              inputActions?.removeAttachment?.(id);
-            } catch (error) {
-              console.warn(`[${NS}] could not drop a stray attachment:`, error);
-            }
-          }
-        }, [attachmentIds]);
+          splitDraftMirror.draft = typeof draftValue === 'string' ? draftValue : null;
+          return () => {
+            splitDraftMirror.draft = null;
+          };
+        }, [draftValue]);
 
         useEffect(() => {
           if (typeof sessionId !== 'string' || sessionId.length === 0) return undefined;
+          const releaseInput = registerComposerInput(sessionId, inputActions);
           const update = () => {
             const anchor = anchorRef.current;
             if (anchor === null) return;
@@ -701,6 +740,7 @@ window.__ModuleLoader__.load({
           if (observer !== undefined) observer.observe(anchor);
           window.addEventListener('resize', update);
           return () => {
+            releaseInput();
             if (observer !== undefined) observer.disconnect();
             window.removeEventListener('resize', update);
             splitMode.hide(sessionId);
@@ -891,6 +931,28 @@ window.__ModuleLoader__.load({
         const statusMap = useSessionStatus((value) => value);
         const [pickerPane, setPickerPane] = useState(null);
         const [hoverPane, setHoverPane] = useState(undefined);
+        const [paneNotice, setPaneNotice] = useState(null);
+        const noticeTimers = useRef([]);
+        const clearNoticeTimers = () => {
+          for (const timer of noticeTimers.current) window.clearTimeout(timer);
+          noticeTimers.current = [];
+        };
+        const flashPaneNotice = (index, text) => {
+          clearNoticeTimers();
+          setPaneNotice({ text, leaving: false });
+          noticeTimers.current.push(
+            window.setTimeout(() => {
+              setPaneNotice((current) => (current === null ? null : { ...current, leaving: true }));
+            }, 2600),
+          );
+          noticeTimers.current.push(
+            window.setTimeout(() => {
+              setPaneNotice(null);
+              noticeTimers.current = [];
+            }, 2600 + 220),
+          );
+        };
+        useEffect(() => clearNoticeTimers, []);
 
         const stateRef = useRef(state);
         stateRef.current = state;
@@ -915,6 +977,92 @@ window.__ModuleLoader__.load({
           if (empty < 0) return;
           store.assignToPane(empty, sessionId);
         }, []);
+
+        // Switching to a Session that is already shown in the grid moves the pane
+        // focus to it (e.g. the header subagent switcher opens child Session B while
+        // the split view shows B as a pane).
+        useEffect(() => {
+          if (typeof sessionId !== 'string' || sessionId.length === 0) return;
+          const current = store.getSnapshot();
+          const visibleCount = Math.min(current.cols * current.rows, MAX_PANES);
+          const index = current.panes.slice(0, visibleCount).indexOf(sessionId);
+          if (index >= 0) store.setFocus(index);
+        }, [sessionId]);
+
+        // Watchdog: the current Session can have two composer arrangements (the
+        // hidden resident one and its pane one) over ONE Lexical editor. If the
+        // hidden one keeps the editor root, the visible pane composer accepts
+        // native text that never reaches the draft (looks typed, cannot send).
+        // Detect that and rebind by remounting the composer bars, restoring the
+        // typed text through the draft API.
+        useEffect(() => {
+          if (typeof sessionId !== 'string' || sessionId.length === 0) return undefined;
+          let consecutive = 0;
+          let attempts = 0;
+          let cooldownUntil = 0;
+          const heal = (text) => {
+            if (Date.now() < cooldownUntil || attempts >= 3) return false;
+            attempts += 1;
+            cooldownUntil = Date.now() + 2200;
+            let dispose;
+            try {
+              dispose = ctx.slots.register(
+                { name: 'conversation.composer.bar', priority: -1, locale: NS },
+                function SplitComposerRebind() {
+                  return null;
+                },
+              );
+            } catch (error) {
+              return false;
+            }
+            window.setTimeout(() => {
+              try {
+                dispose();
+              } catch (error) {
+                /* already disposed */
+              }
+            }, 90);
+            window.setTimeout(() => {
+              const entry = composerInputs.get(sessionId);
+              if (entry?.inputActions?.setDraft !== undefined && typeof text === 'string' && text.length > 0) {
+                try {
+                  entry.inputActions.setDraft(text);
+                } catch (error) {
+                  console.warn(`[${NS}] could not restore the typed draft:`, error);
+                }
+              }
+            }, 280);
+            return true;
+          };
+          const timer = window.setInterval(() => {
+            if (splitComposition.active || Date.now() < splitComposition.until) {
+              consecutive = 0;
+              return;
+            }
+            const state = store.getSnapshot();
+            const count = Math.min(state.cols * state.rows, MAX_PANES);
+            const index = state.panes.slice(0, count).indexOf(sessionId);
+            if (index < 0) {
+              consecutive = 0;
+              return;
+            }
+            const pane = document.querySelector(`[data-pane="${index}"]`);
+            if (pane === null) return;
+            const editable = pane.querySelector('[data-composer-input]');
+            if (editable === null) return;
+            const typed = editable.textContent || '';
+            const draft = splitDraftMirror.draft;
+            if (typed.length === 0 || typeof draft !== 'string' || draft.length > 0) {
+              consecutive = 0;
+              return;
+            }
+            consecutive += 1;
+            if (consecutive < 2) return;
+            consecutive = 0;
+            heal(typed);
+          }, 520);
+          return () => window.clearInterval(timer);
+        }, [sessionId]);
 
         // Hide the resident composer only while the current Session lives inside a
         // pane; the pane's composer is then the single editable root for it.
@@ -965,10 +1113,47 @@ window.__ModuleLoader__.load({
             setHoverPane(undefined);
             if (!insideRoot(event)) return;
             if (isFileDrag(event)) {
+              const transfer = event.dataTransfer;
+              const files = transfer !== null ? Array.from(transfer.files) : [];
+              if (files.length === 0) return;
+              // Directories rely on host path references; leave those to the host.
+              if (transfer !== null && transferHasDirectory(transfer)) return;
               const index = paneIndexAt(event);
               const dropIndex = index ?? stateRef.current.focus;
-              const targetSession = stateRef.current.panes[dropIndex] ?? stateRef.current.panes[stateRef.current.focus] ?? null;
-              markFileDropTarget(targetSession);
+              const panes = stateRef.current.panes;
+              const targetSession =
+                panes[dropIndex] ?? panes[stateRef.current.focus] ?? (typeof sessionId === 'string' ? sessionId : null);
+              if (typeof targetSession !== 'string' || targetSession.length === 0) return;
+              // Subagent Sessions do not accept attachments anywhere in the product:
+              // one-shot children use a read-only composer, continuable children reject
+              // files at prompt time. Consume such a drop and explain it instead of
+              // leaving a failed upload behind.
+              if (sessionIsSubagent(ctx, targetSession)) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                flashPaneNotice(dropIndex, t('drop.subagentUnsupported'));
+                return;
+              }
+              const composer = composerInputs.get(targetSession);
+              const conversation = scopedConversationOf(ctx, targetSession);
+              if (composer === undefined || composer.inputActions === undefined || conversation === undefined) {
+                // Fall back to the shipped intake instead of swallowing the drop.
+                return;
+              }
+              // Take the drop over: the shipped intake is installed once per mounted
+              // composer arrangement, and the current Session can have two of them
+              // (resident panel + pane), which would upload every file twice. One
+              // explicit upload for the target Session replaces all of them.
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              try {
+                const drafts = conversation.createDrafts(targetSession, files);
+                if (Array.isArray(drafts) && drafts.length > 0) {
+                  composer.inputActions.addAttachments(drafts.map((draft) => draft.id));
+                }
+              } catch (error) {
+                console.warn(`[${NS}] could not route the dropped files:`, error);
+              }
               return;
             }
             const dropped = readSessionIdFromDrop(event.dataTransfer);
@@ -982,16 +1167,28 @@ window.__ModuleLoader__.load({
             store.assignToPane(target, dropped);
           };
           const clearHover = () => setHoverPane(undefined);
+          // The shipped attachment intake renders one full-page blurred DropOverlay
+          // per mounted composer. In a split grid that stacks several overlays, and a
+          // missed dragleave can leave them wedged open, blocking the view. The pane
+          // highlight is the drag affordance while split is active, so keep those
+          // overlays off: only their dragenter activation is suppressed, the drop
+          // intake itself still runs and files land in the pane under the cursor.
+          const suppressDropOverlay = (event) => {
+            if (!typeList(event).includes('Files')) return;
+            event.stopImmediatePropagation();
+          };
           const onDragLeave = (event) => {
             if (event.target !== document.documentElement && event.target !== document.body) return;
             if (event.clientX > 0 && event.clientY > 0 && event.clientX < window.innerWidth && event.clientY < window.innerHeight) return;
             clearHover();
           };
+          document.addEventListener('dragenter', suppressDropOverlay, true);
           document.addEventListener('dragover', onDragOver, true);
           document.addEventListener('drop', onDrop, true);
           document.addEventListener('dragleave', onDragLeave, true);
           window.addEventListener('dragend', clearHover, true);
           return () => {
+            document.removeEventListener('dragenter', suppressDropOverlay, true);
             document.removeEventListener('dragover', onDragOver, true);
             document.removeEventListener('drop', onDrop, true);
             document.removeEventListener('dragleave', onDragLeave, true);
@@ -1070,35 +1267,15 @@ window.__ModuleLoader__.load({
         return h(
           'div',
           { className: 'dshsv-root', 'data-split-view': '' },
-          h(
-            'div',
-            { className: 'dshsv-toolbar' },
-            h(
-              'div',
-              { className: 'dshsv-brand' },
-              h('span', { className: 'dshsv-brand-icon' }, h(GridIcon, { size: 15 })),
-              h('span', null, t('brand')),
-            ),
-            h(
-              'label',
-              { className: 'dshsv-layout' },
-              h('span', null, t('layout.label')),
-              h(
-                'select',
-                {
-                  className: 'dshsv-select',
-                  value: layoutFor(state.cols, state.rows).id,
-                  onChange: (event) => store.setLayout(event.target.value),
-                },
-                LAYOUTS.map((layout) =>
-                  h('option', { key: layout.id, value: layout.id }, t(`layout.${layout.id}`)),
-                ),
-              ),
-            ),
-            h('span', { className: 'dshsv-toolbar-spacer' }),
-            visibleIds.length > 0 ? h('span', { className: 'dshsv-hint' }, t('hint')) : null,
-          ),
           grid,
+          paneNotice === null
+            ? null
+            : h(
+                'div',
+                { className: `dshsv-toast${paneNotice.leaving === true ? ' is-leaving' : ''}`, role: 'status' },
+                h('span', { className: 'dshsv-toast-icon' }, h(Svg, null, h('circle', { cx: 8, cy: 8, r: 6.2 }), h('path', { d: 'M8 4.8v2.1' }), h('path', { d: 'M8 9.8v1.4' }))),
+                h('span', null, paneNotice.text),
+              ),
           pickerPane === null
             ? null
             : h(SessionPickerDialog, {
@@ -1142,36 +1319,10 @@ window.__ModuleLoader__.load({
       const session = useSession((value) => value);
       const conversation = useConversation((value) => value);
       const summaryBlank = useSessions((value) => (sessionId === undefined ? undefined : value.byId[sessionId]?.blank));
-      const attachmentIds = useInput((value) => value.attachmentIds);
-      const previousAttachments = useRef([]);
-
-      // A file drop reaches every mounted composer because the shipped attachment
-      // intake listens on `document`. Keep the drop only in the pane it was aimed
-      // at and drop the same attachments from every other pane immediately.
-      useEffect(() => {
-        const currentIds = Array.isArray(attachmentIds) ? attachmentIds : [];
-        const previous = previousAttachments.current;
-        previousAttachments.current = currentIds;
-        const uniqueIds = currentIds.filter((id, index) => currentIds.indexOf(id) === index);
-        if (uniqueIds.length !== currentIds.length) {
-          try {
-            inputActions?.pruneAttachments?.(uniqueIds);
-          } catch (error) {
-            /* keep going */
-          }
-        }
-        const added = currentIds.filter((id) => !previous.includes(id));
-        if (added.length === 0) return;
-        if (fileDropRoute.time === 0 || Date.now() - fileDropRoute.time > FILE_ROUTE_TTL_MS) return;
-        if (fileDropRoute.sessionId === sessionId) return;
-        for (const id of added) {
-          try {
-            inputActions?.removeAttachment?.(id);
-          } catch (error) {
-            console.warn(`[${NS}] could not drop a stray attachment:`, error);
-          }
-        }
-      }, [attachmentIds]);
+      useEffect(
+        () => registerComposerInput(sessionId, inputActions),
+        [sessionId],
+      );
 
       const shellPhase =
         conversation.activeTargets.size > 0 || (session.blank !== true && session.awaitingFirstTurn !== true) || session.running
@@ -1309,13 +1460,13 @@ window.__ModuleLoader__.load({
       };
       const setResidentComposerHidden = (hidden) => {
         const next = hidden === true;
-        if (next) {
-          // Always drop a pending/resident remount shadow when the pane takes over.
-          cancelComposerHeal();
-        }
         if (gateStyle.disabled === !next) return;
         gateStyle.disabled = !next;
-        if (!next) scheduleComposerHeal();
+        // Both transitions remount the composer bars once: the resident occurrence
+        // mounts before the pane occurrence, so the visible pane composer ends up
+        // owning the single editable Lexical root (and the resident composer is
+        // cleanly re-bound when it becomes visible again).
+        scheduleComposerHeal();
       };
       let lastHidden = false;
       // Watchdog: the gate may only be enabled while a split view surface is in
@@ -1333,6 +1484,26 @@ window.__ModuleLoader__.load({
         }
       }, 800);
       ctx.effect(
+        () => {
+          const start = () => {
+            splitComposition.active = true;
+          };
+          const end = () => {
+            splitComposition.active = false;
+            splitComposition.until = Date.now() + 500;
+          };
+          document.addEventListener('compositionstart', start, true);
+          document.addEventListener('compositionend', end, true);
+          return () => {
+            document.removeEventListener('compositionstart', start, true);
+            document.removeEventListener('compositionend', end, true);
+            splitComposition.active = false;
+          };
+        },
+        `${NS}: composition guard`,
+      );
+
+      ctx.effect(
         () => () => {
           window.clearInterval(safetyTimer);
           cancelComposerHeal();
@@ -1340,6 +1511,29 @@ window.__ModuleLoader__.load({
         },
         `${NS}: resident composer gate teardown`,
       );
+
+      // Layout selector lives in the Conversation header utilities row; it only
+      // renders while THIS Session's split view is the active one.
+      function SplitLayoutControl(props) {
+        const { sessionId: controlSessionId, t } = props;
+        const mode = useSyncExternalStore(splitMode.subscribe, splitMode.getSnapshot);
+        const state = useSyncExternalStore(store.subscribe, store.getSnapshot);
+        if (mode.sessionId === null || mode.sessionId !== controlSessionId) return null;
+        return h(
+          'label',
+          { className: 'dshsv-header-chip', title: t('layout.label') },
+          h(
+            'select',
+            {
+              className: 'dshsv-select',
+              value: layoutFor(state.cols, state.rows).id,
+              'aria-label': t('layout.label'),
+              onChange: (event) => store.setLayout(event.target.value),
+            },
+            LAYOUTS.map((layout) => h('option', { key: layout.id, value: layout.id }, t(`layout.${layout.id}`))),
+          ),
+        );
+      }
 
       const SplitGrid = createSplitGrid(ctx, store, pool, setResidentComposerHidden);
       const SplitViewPlaceholder = createSplitViewEntry(ctx, store);
@@ -1367,6 +1561,22 @@ window.__ModuleLoader__.load({
             ),
           ),
         `${NS}: overlay grid`,
+      );
+
+      ctx.effect(
+        () =>
+          ctx.slots.inject('conversation.session.header.utilities', () =>
+            ctx.slots.register(
+              {
+                name: 'conversation.session.header.utilities',
+                id: 'split-view-layout',
+                order: 40,
+                locale: NS,
+              },
+              SplitLayoutControl,
+            ),
+          ),
+        `${NS}: layout control`,
       );
 
       ctx.effect(
